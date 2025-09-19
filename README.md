@@ -285,19 +285,19 @@ You can manually run exported functions for testing.
 
 ---
 
-## Contributing
+## 👨‍💻 Author
 
-1. Open an issue
-2. Create a branch, implement, test
-3. Submit a PR with description and notes
-
----
-
-## License
-
-MIT — feel free to use and adapt.
+* **Vipul Kumar Patel**  
+* 💼 [LinkedIn](https://linkedin.com/in/vipul-kumar-patel-90b1242b1)  
+* 📂 [GitHub](https://github.com/Vipul99999)
 
 ---
-```
 
-Let me know if you want this scaffolded into a GitHub repo structure, or if you'd like me to generate Dockerfiles, CI config, or auth routes next. You're building something solid here!
+## 📜 License
+
+```text
+MIT License
+
+Copyright (c) 2025 [Vipul Kumar Patel]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy...
