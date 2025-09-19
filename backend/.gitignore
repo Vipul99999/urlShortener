@@ -1,0 +1,43 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+
+# Coverage reports
+coverage/
+
+# Optional: lock files (if you want to ignore them)
+# package-lock.json
+# yarn.lock
+
+# Optional: ignore test snapshots
+__snapshots__/
+
+# Optional: ignore database files
+*.sqlite
+*.db
