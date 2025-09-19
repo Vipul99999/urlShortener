@@ -1,4 +1,3 @@
-Absolutely, Vipul! Here's your complete `README.md` file content, formatted and ready to drop into your repo:
 
 ```markdown
 # URL Shortener — README
