@@ -44,7 +44,7 @@ This repository implements short link creation, redirect handling, click logging
 
 ## Repository layout
 
-```
+```text
 project-root/
 ├─ backend/
 │  ├─ prisma/
