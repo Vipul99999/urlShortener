@@ -2,6 +2,12 @@ import React, { useState } from "react";
 import { postShorturl } from "../api/apiClient";
 import ResultList from "./ResultList";
 
+const tailwindColors = [
+  "red", "blue", "green", "yellow", "purple", "pink", "indigo", "teal",
+  "orange", "cyan", "lime", "rose", "emerald", "violet", "fuchsia",
+  "sky", "amber", "stone", "neutral", "zinc", "gray", "slate"
+];
+
 export default function ShortenForm() {
   const [url, setUrl] = useState("");
   const [validity, setValidity] = useState<number | "">(30);
@@ -10,13 +16,15 @@ export default function ShortenForm() {
   const [results, setResults] = useState<
     Array<{ shortLink: string; expiry: string }>
   >([]);
-  const [isBlinking, setIsBlinking] = useState(false);
+
+  // initial button color
+  const [bgColor, setBgColor] = useState("blue");
 
   const handleClick = () => {
-    setIsBlinking(true);
-    setTimeout(() => setIsBlinking(false), 300); // Duration of blink
+    const randomColor =
+      tailwindColors[Math.floor(Math.random() * tailwindColors.length)];
+    setBgColor(randomColor);
   };
-
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,15 +79,12 @@ export default function ShortenForm() {
           className="border rounded px-3 py-2 col-span-full sm:col-span-2"
         />
         <button
-      type="submit"
-      onClick={handleClick}
-      className={`bg-blue-500 hover:bg-blue-800 text-white font-semibold px-4 py-2 rounded col-span-full sm:col-span-1 transition-all ${
-        isBlinking ? 'animate-ping' : ''
-      }`}
-    >
-      Create
-    </button>
-
+          type="submit"
+          onClick={handleClick}
+          className={`bg-${bgColor}-700 hover:bg-${bgColor}-500 text-white font-semibold px-4 py-2 rounded col-span-full sm:col-span-1 transition-all`}
+        >
+          Create
+        </button>
       </form>
 
       <ResultList results={results} />
