@@ -1,5 +1,4 @@
 
-```markdown
 #### URL Shortener — README
 
 A simple, production-minded URL shortener (Fullstack) built with **Express + TypeScript + Prisma + PostgreSQL** (backend) and **Vite + React + TypeScript** (frontend).  
