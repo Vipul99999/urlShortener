@@ -5,6 +5,9 @@ A simple, production-minded URL shortener (Fullstack) built with **Express + Typ
 This repository implements short link creation, redirect handling, click logging, daily aggregation of clicks and pruning of old click logs. Authentication is left out on purpose — the schema includes optional `userId` so you can add auth later.
 
 ---
+### 🔗 Live Demo
+
+[View Live Project](https://url-shortener-iqk3wryaq-vipul99999s-projects.vercel.app/)
 
 ### 🔹 Demo
 
