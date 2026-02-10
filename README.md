@@ -1,5 +1,5 @@
 
-#### URL Shortener — README
+#### URL Shortener 
 
 A simple, production-minded URL shortener (Fullstack) built with **Express + TypeScript + Prisma + PostgreSQL** (backend) and **Vite + React + TypeScript** (frontend).  
 This repository implements short link creation, redirect handling, click logging, daily aggregation of clicks and pruning of old click logs. Authentication is left out on purpose — the schema includes optional `userId` so you can add auth later.
@@ -8,14 +8,14 @@ This repository implements short link creation, redirect handling, click logging
 
 ### 🔹 Demo
 
-![Project Demo](./public/ShortUrl.gif)
+![Project Demo](.frontend/public/ShortUrl.gif)
 
 ---
 
 ### 🔹 Screenshots
  
 #### 🖥️ Home Page View  
-![Home Page Screenshot](./public/ShortUrlHomePage.png)
+![Home Page Screenshot](.frontend/public/ShortUrlHomePage.png)
 
 ### Features
 
