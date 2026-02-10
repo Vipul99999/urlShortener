@@ -1,4 +1,4 @@
-VITE_API_URL="https://urlshortener-68mz.onrender.com"
+
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {

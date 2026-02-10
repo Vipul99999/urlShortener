@@ -11,5 +11,5 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src", "vite-env.d.ts"]
+  "include": ["src", "src/vite-env.d.ts"]
 }
