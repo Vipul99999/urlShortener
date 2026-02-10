@@ -45,6 +45,8 @@ project-root/
 │  │  │  └─ shortcode.ts
 │  │  ├─ middleware/
 │  │  │  └─ logging.ts
+│  │  │  └─ errorHandler.ts
+│  │  │  └─ rateLimiter.ts
 │  │  ├─ routes/
 │  │  │  └─ shorturls.ts
 │  │  └─ workers/
