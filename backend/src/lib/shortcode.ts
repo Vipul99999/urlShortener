@@ -1,6 +1,6 @@
 // Shortcode generator + validator
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-export function randomShortcode(len = 6) {
+export function randomShortcode(len = 10) {
   let s = '';
   for (let i = 0; i < len; i++) {
     s += CHARS[Math.floor(Math.random() * CHARS.length)];

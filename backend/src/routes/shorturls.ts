@@ -43,9 +43,9 @@ router.post('/', async (req: Request, res: Response) => {
 
     // generate shortcode
     let attempts = 0;
-    while (attempts < 6) {
+    while (attempts < 10) {
       attempts++;
-      const candidate = randomShortcode(6 + Math.floor(attempts / 2));
+      const candidate = randomShortcode(10 + Math.floor(attempts / 2));
       try {
         const created = await prisma.shortUrl.create({
           data: { shortcode: candidate, url, expiresAt }

@@ -1,34 +1,24 @@
 
 ```markdown
-# URL Shortener — README
+#### URL Shortener — README
 
 A simple, production-minded URL shortener (Fullstack) built with **Express + TypeScript + Prisma + PostgreSQL** (backend) and **Vite + React + TypeScript** (frontend).  
 This repository implements short link creation, redirect handling, click logging, daily aggregation of clicks and pruning of old click logs. Authentication is left out on purpose — the schema includes optional `userId` so you can add auth later.
 
 ---
 
-## Table of contents
+### 🔹 Demo
 
-- [Features](#features)
-- [Repository layout](#repository-layout)
-- [Prerequisites](#prerequisites)
-- [Quickstart (dev)](#quickstart-dev)
-- [Environment variables](#environment-variables)
-- [Database / Prisma](#database--prisma)
-- [API reference](#api-reference)
-- [Frontend usage](#frontend-usage)
-- [Worker / cleanup jobs](#worker--cleanup-jobs)
-- [Data lifecycle & retention](#data-lifecycle--retention)
-- [Production considerations](#production-considerations)
-- [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
-- [Next steps / TODOs](#next-steps--todos)
-- [Contributing](#contributing)
-- [License](#license)
+![Project Demo](./public/ShortUrl.gif)
 
 ---
 
-## Features
+### 🔹 Screenshots
+ 
+#### 🖥️ Home Page View  
+![Home Page Screenshot](./public/ShortUrlHomePage.png)
+
+### Features
 
 - Create short links (auto-generated or user-supplied shortcode).
 - Redirect shortcodes → records clicks (referrer, user-agent, country header if available).
@@ -41,7 +31,7 @@ This repository implements short link creation, redirect handling, click logging
 
 ---
 
-## Repository layout
+### Repository layout
 
 ```text
 project-root/
@@ -80,7 +70,7 @@ project-root/
 
 ---
 
-## Prerequisites
+### Prerequisites
 
 - Node.js >= 18
 - npm or yarn
@@ -89,7 +79,7 @@ project-root/
 
 ---
 
-## Quickstart (dev)
+### Quickstart (dev)
 
 1. Clone repo and open two terminals (backend / frontend).
 
@@ -118,7 +108,7 @@ Vite will print the local URL (typically `http://localhost:5173`).
 
 ---
 
-## Environment variables
+### Environment variables
 
 `backend/.env` (example)
 
@@ -137,7 +127,7 @@ VITE_API_BASE=http://localhost:4000
 
 ---
 
-## Database & Prisma
+### Database & Prisma
 
 The Prisma schema (`backend/prisma/schema.prisma`) contains:
 
@@ -155,7 +145,7 @@ npx prisma studio
 
 ---
 
-## API reference
+### API reference
 
 ### Create short URL
 
