@@ -7,7 +7,7 @@ This repository implements short link creation, redirect handling, click logging
 ---
 ### 🔗 Live Demo
 
-[View Live Project](https://url-shortener-iqk3wryaq-vipul99999s-projects.vercel.app/)
+[View Live Project](https://url-shortener-three-silk.vercel.app/)
 
 ### 🔹 Demo
 
