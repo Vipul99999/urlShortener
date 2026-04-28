@@ -1,0 +1,81 @@
+# Node.js dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.examples
+
+# Build and runtime artifacts
+.next/
+out/
+dist/
+build/
+.cache/
+.runtime/
+.data/
+.turbo/
+
+# Logs
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage and testing
+coverage/
+*.lcov
+playwright-report/
+test-results/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma local databases
+prisma/*.db
+prisma/dev.db
+prisma/test.db
+prisma/*.sqlite
+prisma/*.sqlite-journal
+prisma/generated/
+
+# PostgreSQL dumps/backups
+*.sql
+*.dump
+*.backup
+
+# Redis dump files
+dump.rdb
+*.rdb
+*.aof
+
+# Worker process artifacts
+worker/logs/
+worker/tmp/
+worker/pids/
+
+# Monorepo / Turborepo configs (keep turbo.json tracked, ignore cache)
+pnpm-lock.yaml
+pnpm-workspace.yaml
+turbo.json
+
+# Optional: ignore Docker build artifacts
+docker-compose.override.yml
+*.dockerfile
+*.tar
+
+playwright.config.ts
+playwright-report/
+test-results/

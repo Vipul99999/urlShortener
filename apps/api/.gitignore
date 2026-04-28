@@ -1,0 +1,55 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Runtime data
+tmp/
+temp/
+.cache/
+dist/
+build/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Coverage and testing
+coverage/
+*.lcov
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+
+# Redis dump files
+dump.rdb
+*.rdb
+*.aof
+
+# Worker process artifacts
+worker/logs/
+worker/tmp/
+worker/pids/
+
+# Docker (if containerized)
+docker-compose.override.yml
+*.dockerfile
+*.tar

@@ -1,0 +1,33 @@
+{
+  "name": "url-shortener",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:web": "pnpm --filter @repo/web dev",
+    "dev:api": "pnpm --filter @repo/api dev",
+    "dev:worker": "pnpm --filter @repo/worker dev",
+    "build": "turbo build",
+    "build:web": "pnpm --filter @repo/web build",
+    "build:api": "pnpm --filter @repo/api build",
+    "build:worker": "pnpm --filter @repo/worker build",
+    "start:web": "pnpm --filter @repo/web start",
+    "start:api": "pnpm --filter @repo/api start",
+    "start:worker": "pnpm --filter @repo/worker start",
+    "lint": "turbo lint",
+    "test": "node ./apps/api/node_modules/tsx/dist/cli.mjs --test tests/recovery.test.ts",
+    "test:e2e": "playwright test",
+    "db:generate": "pnpm --filter @repo/db prisma generate",
+    "db:migrate": "pnpm --filter @repo/db prisma migrate dev",
+    "db:deploy": "pnpm --filter @repo/db prisma migrate deploy",
+    "db:seed": "pnpm --filter @repo/db prisma db seed"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1033.0",
+    "@playwright/test": "^1.59.1",
+    "@sentry/nextjs": "^10.49.0",
+    "@sentry/node": "^10.49.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.6.3"
+  }
+}

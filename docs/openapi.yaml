@@ -1,0 +1,1315 @@
+openapi: 3.1.0
+info:
+  title: UrlShortener API
+  version: 1.0.0
+  description: |
+    OpenAPI-style specification for the current UrlShortener API.
+
+    This spec is intentionally pragmatic and aligned to the current codebase.
+    Some response payloads are summarized rather than fully exhaustively modeled.
+servers:
+  - url: http://localhost:4000
+    description: Local development
+  - url: https://api.example.com
+    description: Production example
+tags:
+  - name: Health
+  - name: Auth
+  - name: Workspaces
+  - name: Users
+  - name: Links
+  - name: Analytics
+  - name: Tags
+  - name: QR
+  - name: Exports
+  - name: Invitations
+  - name: Domains
+  - name: API Keys
+  - name: Audit
+  - name: Ops
+  - name: Redirects
+  - name: Webhooks
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+    AuthSessionResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        sessionId:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+      required: [accessToken, refreshToken, sessionId, workspaceId]
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+      required: [refreshToken]
+    ForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required: [email]
+    ResetPasswordRequest:
+      type: object
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+      required: [token, password]
+    ResendVerificationRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required: [email]
+    ChangePasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+      required: [currentPassword, newPassword]
+    CreateWorkspaceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required: [name]
+    UpdateWorkspaceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        brandingTitle:
+          type: string
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+    Link:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        domain:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+          nullable: true
+        destinationUrl:
+          type: string
+        campaign:
+          type: string
+          nullable: true
+        status:
+          type: string
+        totalClicks:
+          type: integer
+        uniqueClicks:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    CreateLinkRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        destinationUrl:
+          type: string
+          format: uri
+        domain:
+          type: string
+        slug:
+          type: string
+        campaign:
+          type: string
+        redirectType:
+          type: string
+          enum: [TEMPORARY, PERMANENT]
+      required: [destinationUrl]
+    UpdateLinkRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        destinationUrl:
+          type: string
+          format: uri
+        domain:
+          type: string
+        campaign:
+          type: string
+        redirectType:
+          type: string
+          enum: [TEMPORARY, PERMANENT]
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+    WorkspaceSummary:
+      type: object
+      properties:
+        totalLinks:
+          type: integer
+        totalClicks:
+          type: integer
+        uniqueClicks:
+          type: integer
+      required: [totalLinks, totalClicks, uniqueClicks]
+    CreateTagRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+      required: [name]
+    AttachTagRequest:
+      type: object
+      properties:
+        tagId:
+          type: string
+          format: uuid
+      required: [tagId]
+    CreateInvitationRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+      required: [email, role]
+    AcceptInvitationRequest:
+      type: object
+      properties:
+        token:
+          type: string
+      required: [token]
+    CreateDomainRequest:
+      type: object
+      properties:
+        hostname:
+          type: string
+      required: [hostname]
+    UpdateDomainStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [PENDING, DISABLED]
+      required: [status]
+    CreateApiKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+            enum: [links:read, links:write, analytics:read, tags:read, tags:write, exports:read, exports:write]
+      required: [name, scopes]
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: API health
+      responses:
+        '200':
+          description: OK
+  /ready:
+    get:
+      tags: [Health]
+      summary: API readiness
+      responses:
+        '200':
+          description: Ready
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Refreshed session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Start password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Success
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Success
+  /auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Resend verification email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationRequest'
+      responses:
+        '200':
+          description: Success
+  /auth/verify-email:
+    get:
+      tags: [Auth]
+      summary: Verify email token
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Success
+  /workspaces:
+    get:
+      tags: [Workspaces]
+      summary: List workspaces
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Workspace memberships
+    post:
+      tags: [Workspaces]
+      summary: Create workspace
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceRequest'
+      responses:
+        '200':
+          description: Workspace created
+  /workspaces/{workspaceId}:
+    get:
+      tags: [Workspaces]
+      summary: Get workspace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workspace
+    patch:
+      tags: [Workspaces]
+      summary: Update workspace
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkspaceRequest'
+      responses:
+        '200':
+          description: Workspace updated
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User
+    patch:
+      tags: [Users]
+      summary: Update current user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Updated user
+  /workspaces/{workspaceId}/members:
+    get:
+      tags: [Users]
+      summary: List workspace members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Members
+  /workspaces/{workspaceId}/links:
+    get:
+      tags: [Links]
+      summary: List links
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Link'
+    post:
+      tags: [Links]
+      summary: Create link
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+      responses:
+        '200':
+          description: Link created
+  /workspaces/{workspaceId}/links/{linkId}:
+    get:
+      tags: [Links]
+      summary: Get link
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Link
+    patch:
+      tags: [Links]
+      summary: Update link
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLinkRequest'
+      responses:
+        '200':
+          description: Updated link
+    delete:
+      tags: [Links]
+      summary: Soft-delete link
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+  /workspaces/{workspaceId}/analytics/summary:
+    get:
+      tags: [Analytics]
+      summary: Workspace analytics summary
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceSummary'
+  /workspaces/{workspaceId}/analytics/overview:
+    get:
+      tags: [Analytics]
+      summary: Workspace analytics overview
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Overview
+  /workspaces/{workspaceId}/links/{linkId}/analytics/summary:
+    get:
+      tags: [Analytics]
+      summary: Link summary
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Link summary
+  /workspaces/{workspaceId}/links/{linkId}/analytics/daily:
+    get:
+      tags: [Analytics]
+      summary: Link daily analytics
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Daily stats
+  /workspaces/{workspaceId}/tags:
+    get:
+      tags: [Tags]
+      summary: List tags
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tags
+    post:
+      tags: [Tags]
+      summary: Create tag
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTagRequest'
+      responses:
+        '200':
+          description: Tag created
+  /workspaces/{workspaceId}/tags/{tagId}:
+    patch:
+      tags: [Tags]
+      summary: Update tag
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tag updated
+    delete:
+      tags: [Tags]
+      summary: Delete tag
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tag deleted
+  /workspaces/{workspaceId}/links/{linkId}/tags:
+    post:
+      tags: [Tags]
+      summary: Attach tag to link
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachTagRequest'
+      responses:
+        '200':
+          description: Tag attached
+  /workspaces/{workspaceId}/links/{linkId}/tags/{tagId}:
+    delete:
+      tags: [Tags]
+      summary: Detach tag from link
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tag detached
+  /workspaces/{workspaceId}/links/{linkId}/qr:
+    post:
+      tags: [QR]
+      summary: Generate QR
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: QR generated
+  /workspaces/{workspaceId}/exports/links:
+    post:
+      tags: [Exports]
+      summary: Queue links export
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Export queued
+  /workspaces/{workspaceId}/exports:
+    get:
+      tags: [Exports]
+      summary: List exports
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Exports
+  /workspaces/{workspaceId}/exports/{exportId}:
+    get:
+      tags: [Exports]
+      summary: Get export
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Export
+  /workspaces/{workspaceId}/exports/{exportId}/download:
+    get:
+      tags: [Exports]
+      summary: Download export
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: CSV content
+  /workspaces/{workspaceId}/invitations:
+    get:
+      tags: [Invitations]
+      summary: List invitations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invitations
+    post:
+      tags: [Invitations]
+      summary: Create invitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvitationRequest'
+      responses:
+        '200':
+          description: Invitation created
+  /workspaces/{workspaceId}/invitations/{invitationId}:
+    delete:
+      tags: [Invitations]
+      summary: Revoke invitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: invitationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invitation revoked
+  /invitations/accept:
+    get:
+      tags: [Invitations]
+      summary: Preview invitation
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invitation preview
+    post:
+      tags: [Invitations]
+      summary: Accept invitation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationRequest'
+      responses:
+        '200':
+          description: Invitation accepted
+  /workspaces/{workspaceId}/domains:
+    get:
+      tags: [Domains]
+      summary: List domains
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Domains
+    post:
+      tags: [Domains]
+      summary: Create domain
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDomainRequest'
+      responses:
+        '200':
+          description: Domain created
+  /workspaces/{workspaceId}/domains/{domainId}:
+    delete:
+      tags: [Domains]
+      summary: Remove domain
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Domain removed
+  /workspaces/{workspaceId}/domains/{domainId}/diagnostics:
+    get:
+      tags: [Domains]
+      summary: Domain diagnostics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Diagnostics
+  /workspaces/{workspaceId}/domains/{domainId}/refresh-verification:
+    post:
+      tags: [Domains]
+      summary: Refresh verification token
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Refreshed
+  /workspaces/{workspaceId}/domains/{domainId}/status:
+    patch:
+      tags: [Domains]
+      summary: Update domain status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDomainStatusRequest'
+      responses:
+        '200':
+          description: Status updated
+  /workspaces/{workspaceId}/api-keys:
+    get:
+      tags: [API Keys]
+      summary: List API keys
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: API keys
+    post:
+      tags: [API Keys]
+      summary: Create API key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApiKeyRequest'
+      responses:
+        '200':
+          description: API key created
+  /workspaces/{workspaceId}/api-keys/{apiKeyId}/usage:
+    get:
+      tags: [API Keys]
+      summary: Get API key usage summary
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: apiKeyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Usage summary
+  /workspaces/{workspaceId}/api-keys/{apiKeyId}:
+    delete:
+      tags: [API Keys]
+      summary: Revoke API key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: apiKeyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Revoked
+  /workspaces/{workspaceId}/audit-logs:
+    get:
+      tags: [Audit]
+      summary: List audit logs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Audit logs
+  /workspaces/{workspaceId}/ops/overview:
+    get:
+      tags: [Ops]
+      summary: Workspace operations overview
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Ops overview
+  /webhooks/resend:
+    post:
+      tags: [Webhooks]
+      summary: Ingest Resend webhook
+      responses:
+        '200':
+          description: Processed

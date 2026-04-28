@@ -1,0 +1,584 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DELETED
+}
+
+enum WorkspacePlan {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+enum WorkspaceMemberRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum LinkStatus {
+  ACTIVE
+  DISABLED
+  EXPIRED
+  DELETED
+}
+
+enum RedirectType {
+  TEMPORARY
+  PERMANENT
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  GITHUB
+  MICROSOFT
+}
+
+enum ExportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+  API_KEY
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum CustomDomainStatus {
+  PENDING
+  VERIFIED
+  DISABLED
+}
+
+enum JobKind {
+  SEND_VERIFICATION_EMAIL
+  SEND_PASSWORD_RESET_EMAIL
+  SEND_INVITATION_EMAIL
+  GENERATE_LINKS_EXPORT
+  PROCESS_CLICK_EVENT
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String             @unique @db.Citext
+  passwordHash      String?
+  name              String?            @db.VarChar(120)
+  avatarUrl         String?            @db.Text
+  emailVerified     Boolean            @default(false)
+  status            UserStatus         @default(ACTIVE)
+  lastLoginAt       DateTime?          @db.Timestamptz(6)
+  createdAt         DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime?          @db.Timestamptz(6)
+
+  authAccounts      AuthAccount[]
+  sessions                Session[]
+  workspaceMemberships    WorkspaceMember[]
+  createdLinks            Link[]                   @relation("CreatedLinks")
+  generatedQrCodes        QrCode[]                 @relation("GeneratedQrCodes")
+  requestedExports        ExportJob[]              @relation("RequestedExports")
+  createdApiKeys          ApiKey[]                 @relation("CreatedApiKeys")
+  auditLogs               AuditLog[]               @relation("ActorAuditLogs")
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  sentInvitations         Invitation[]             @relation("SentInvitations")
+  emailDeliveryEvents     EmailDeliveryEvent[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model AuthAccount {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String        @db.Uuid
+  provider          AuthProvider
+  providerUserId    String        @db.VarChar(191)
+  providerEmail     String?       @db.Citext
+  createdAt         DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @db.Timestamptz(6)
+
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("auth_accounts")
+}
+
+model Session {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String        @db.Uuid
+  refreshTokenHash  String        @db.VarChar(255)
+  jti               String        @unique @db.VarChar(80)
+  userAgent         String?       @db.Text
+  ipAddress         String?       @db.Inet
+  expiresAt         DateTime      @db.Timestamptz(6)
+  revokedAt         DateTime?     @db.Timestamptz(6)
+  createdAt         DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @db.Timestamptz(6)
+
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("sessions")
+}
+
+model Workspace {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String              @db.VarChar(120)
+  slug              String              @unique @db.VarChar(80)
+  plan              WorkspacePlan       @default(FREE)
+  brandingTitle     String?             @db.VarChar(120)
+  createdAt         DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime            @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime?           @db.Timestamptz(6)
+
+  members           WorkspaceMember[]
+  links             Link[]
+  tags              Tag[]
+  exports           ExportJob[]
+  apiKeys           ApiKey[]
+  auditLogs         AuditLog[]
+  invitations       Invitation[]
+  domains           WorkspaceDomain[]
+  emailDeliveryEvents EmailDeliveryEvent[]
+  abuseSignals      AbuseSignal[]
+
+  @@index([createdAt])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId       String              @db.Uuid
+  userId            String              @db.Uuid
+  role              WorkspaceMemberRole @default(OWNER)
+  joinedAt          DateTime            @default(now()) @db.Timestamptz(6)
+
+  workspace         Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@index([workspaceId, role])
+  @@map("workspace_members")
+}
+
+model Link {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId       String          @db.Uuid
+  createdById       String          @db.Uuid
+
+  domain            String          @default("default") @db.VarChar(191)
+  slug              String          @db.VarChar(80)
+
+  title             String?         @db.VarChar(160)
+  destinationUrl    String          @db.Text
+  normalizedUrl     String          @db.Text
+  description       String?         @db.Text
+  campaign          String?         @db.VarChar(120)
+  status            LinkStatus      @default(ACTIVE)
+  redirectType      RedirectType    @default(TEMPORARY)
+
+  passwordHash      String?         @db.VarChar(255)
+  expiresAt         DateTime?       @db.Timestamptz(6)
+  lastClickedAt     DateTime?       @db.Timestamptz(6)
+
+  totalClicks       BigInt          @default(0)
+  uniqueClicks      BigInt          @default(0)
+
+  isArchived        Boolean         @default(false)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime?       @db.Timestamptz(6)
+
+  workspace         Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy         User            @relation("CreatedLinks", fields: [createdById], references: [id], onDelete: Restrict)
+
+  tags              LinkTag[]
+  dailyStats        LinkDailyStat[]
+  qrCodes           QrCode[]
+  clickEvents       LinkClickEvent[]
+  uniqueVisitors    LinkUniqueVisitor[]
+  dailyVisitors     LinkDailyUniqueVisitor[]
+
+  @@unique([domain, slug])
+  @@index([workspaceId])
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, status])
+  @@index([createdById])
+  @@index([slug])
+  @@index([expiresAt])
+  @@index([lastClickedAt])
+  @@index([deletedAt])
+  @@map("links")
+}
+
+model Tag {
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId       String       @db.Uuid
+  name              String       @db.VarChar(50)
+  color             String?      @db.VarChar(20)
+  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
+
+  workspace         Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  links             LinkTag[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@map("tags")
+}
+
+model LinkTag {
+  linkId            String       @db.Uuid
+  tagId             String       @db.Uuid
+  assignedAt        DateTime     @default(now()) @db.Timestamptz(6)
+
+  link              Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  tag               Tag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([linkId, tagId])
+  @@index([tagId])
+  @@map("link_tags")
+}
+
+model LinkDailyStat {
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId            String       @db.Uuid
+  date              DateTime     @db.Date
+  clicks            BigInt       @default(0)
+  uniqueClicks      BigInt       @default(0)
+  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime     @updatedAt @db.Timestamptz(6)
+
+  link              Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, date])
+  @@index([date])
+  @@index([linkId, date])
+  @@map("link_daily_stats")
+}
+
+model LinkClickEvent {
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId            String       @db.Uuid
+  clickedAt         DateTime     @default(now()) @db.Timestamptz(6)
+
+  ipHash            String?      @db.VarChar(128)
+  country           String?      @db.VarChar(8)
+  city              String?      @db.VarChar(120)
+  referrer          String?      @db.Text
+  referrerHost      String?      @db.VarChar(191)
+  userAgent         String?      @db.Text
+  deviceType        String?      @db.VarChar(30)
+  browser           String?      @db.VarChar(50)
+  os                String?      @db.VarChar(50)
+  isBot             Boolean      @default(false)
+
+  link              Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId, clickedAt])
+  @@index([clickedAt])
+  @@index([country])
+  @@map("link_click_events")
+}
+
+model WorkspaceDomain {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId       String             @db.Uuid
+  hostname          String             @unique @db.VarChar(191)
+  status            CustomDomainStatus @default(PENDING)
+  verificationToken String             @unique @db.VarChar(64)
+  verifiedAt        DateTime?          @db.Timestamptz(6)
+  createdAt         DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(6)
+
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, createdAt])
+  @@map("workspace_domains")
+}
+
+model QrCode {
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId            String       @db.Uuid
+  generatedById     String       @db.Uuid
+  format            String       @default("png") @db.VarChar(20)
+  size              Int          @default(512)
+  fileUrl           String?      @db.Text
+  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
+
+  link              Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  generatedBy       User         @relation("GeneratedQrCodes", fields: [generatedById], references: [id], onDelete: Restrict)
+
+  @@index([linkId])
+  @@index([generatedById])
+  @@map("qr_codes")
+}
+
+model ExportJob {
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId       String       @db.Uuid
+  requestedById     String       @db.Uuid
+  type              String       @db.VarChar(50)
+  status            ExportStatus @default(PENDING)
+  fileUrl           String?      @db.Text
+  fileName          String?      @db.VarChar(255)
+  contentType       String?      @db.VarChar(100)
+  content           String?      @db.Text
+  filtersJson       Json?
+  errorMessage      String?      @db.Text
+  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime     @updatedAt @db.Timestamptz(6)
+  completedAt       DateTime?    @db.Timestamptz(6)
+
+  workspace         Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  requestedBy       User         @relation("RequestedExports", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, createdAt])
+  @@index([requestedById])
+  @@index([status])
+  @@map("export_jobs")
+}
+
+model EmailDeliveryEvent {
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId       String?      @db.Uuid
+  triggeredByUserId String?      @db.Uuid
+  provider          String       @db.VarChar(30)
+  emailType         String       @db.VarChar(50)
+  recipient         String?      @db.Citext
+  providerMessageId String?      @db.VarChar(191)
+  eventType         String       @db.VarChar(50)
+  status            String?      @db.VarChar(30)
+  payloadJson       Json?
+  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
+
+  workspace         Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  triggeredByUser   User?        @relation(fields: [triggeredByUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([provider, eventType, createdAt])
+  @@index([providerMessageId])
+  @@map("email_delivery_events")
+}
+
+model LinkUniqueVisitor {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId     String   @db.Uuid
+  ipHash     String   @db.VarChar(128)
+  firstSeenAt DateTime @default(now()) @db.Timestamptz(6)
+
+  link       Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, ipHash])
+  @@index([linkId])
+  @@map("link_unique_visitors")
+}
+
+model LinkDailyUniqueVisitor {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId     String   @db.Uuid
+  date       DateTime @db.Date
+  ipHash     String   @db.VarChar(128)
+  firstSeenAt DateTime @default(now()) @db.Timestamptz(6)
+
+  link       Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, date, ipHash])
+  @@index([linkId, date])
+  @@map("link_daily_unique_visitors")
+}
+
+model Job {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind         JobKind
+  status       JobStatus  @default(PENDING)
+  payloadJson  Json
+  resultJson   Json?
+  errorMessage String?    @db.Text
+  attempts     Int        @default(0)
+  maxAttempts  Int        @default(5)
+  availableAt  DateTime   @default(now()) @db.Timestamptz(6)
+  lockedAt     DateTime?  @db.Timestamptz(6)
+  lockedBy     String?    @db.VarChar(120)
+  completedAt  DateTime?  @db.Timestamptz(6)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(6)
+
+  @@index([status, availableAt])
+  @@index([kind, status, availableAt])
+  @@map("jobs")
+}
+
+model ApiKey {
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId       String       @db.Uuid
+  createdById       String       @db.Uuid
+  name              String       @db.VarChar(100)
+  scopes            String[]
+  keyPrefix         String       @unique @db.VarChar(20)
+  keyHash           String       @db.VarChar(255)
+  lastUsedAt        DateTime?    @db.Timestamptz(6)
+  expiresAt         DateTime?    @db.Timestamptz(6)
+  status            ApiKeyStatus @default(ACTIVE)
+  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
+  revokedAt         DateTime?    @db.Timestamptz(6)
+
+  workspace         Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy         User         @relation("CreatedApiKeys", fields: [createdById], references: [id], onDelete: Restrict)
+  requestEvents     ApiKeyRequestEvent[]
+
+  @@index([workspaceId])
+  @@index([createdById])
+  @@index([status])
+  @@map("api_keys")
+}
+
+model ApiKeyRequestEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  apiKeyId    String   @db.Uuid
+  method      String   @db.VarChar(10)
+  route       String   @db.VarChar(191)
+  statusCode  Int
+  latencyMs   Int?
+  ipHash      String?  @db.VarChar(128)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  apiKey      ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, createdAt])
+  @@index([route, createdAt])
+  @@map("api_key_request_events")
+}
+
+model AbuseSignal {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId  String?      @db.Uuid
+  source       String       @db.VarChar(50)
+  kind         String       @db.VarChar(50)
+  ipHash       String?      @db.VarChar(128)
+  hostname     String?      @db.VarChar(191)
+  path         String?      @db.Text
+  userAgent    String?      @db.Text
+  actionTaken  String?      @db.VarChar(100)
+  metadataJson Json?
+  createdAt    DateTime     @default(now()) @db.Timestamptz(6)
+
+  workspace    Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([source, kind, createdAt])
+  @@index([ipHash, createdAt])
+  @@map("abuse_signals")
+}
+
+model AuditLog {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId       String?        @db.Uuid
+  actorUserId       String?        @db.Uuid
+  actorType         AuditActorType
+  action            String         @db.VarChar(100)
+  entityType        String         @db.VarChar(50)
+  entityId          String?        @db.VarChar(100)
+  metadataJson      Json?
+  ipAddress         String?        @db.Inet
+  createdAt         DateTime       @default(now()) @db.Timestamptz(6)
+
+  workspace         Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  actorUser         User?          @relation("ActorAuditLogs", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+model Invitation {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String             @db.Uuid
+  invitedById String             @db.Uuid
+  email       String             @db.Citext
+  role        WorkspaceMemberRole
+  tokenHash   String             @unique
+  status      InvitationStatus   @default(PENDING)
+  expiresAt   DateTime           @db.Timestamptz(6)
+  acceptedAt  DateTime?          @db.Timestamptz(6)
+  revokedAt   DateTime?          @db.Timestamptz(6)
+  createdAt   DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime           @updatedAt @db.Timestamptz(6)
+
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy   User               @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status, createdAt])
+  @@index([email, status])
+  @@map("invitations")
+}
+
+model PasswordResetToken {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @db.Uuid
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @db.Uuid
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}

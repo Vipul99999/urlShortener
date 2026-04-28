@@ -1,0 +1,31 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+
+# Prisma
+prisma/*.db
+prisma/migrations/
+prisma/dev.db
+prisma/test.db
+prisma/*.sqlite
+prisma/*.sqlite-journal
+prisma/generated/
+
+# PostgreSQL local databases
+*.sql
+*.dump
+*.backup
+
+# Redis dump files
+dump.rdb
+*.rdb
+*.aof
